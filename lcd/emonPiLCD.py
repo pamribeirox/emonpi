@@ -144,7 +144,7 @@ class Background(threading.Thread):
                     if len(tmp)>0: signallevel = tmp[0]
 
                 r.set("wlan:signallevel",signallevel)
-                logger.info("background: wlan "+str(signallevel))
+                logger.info("background: wlan signal "+str(signallevel))
                 
             # this loop runs a bit faster so that ctrl-c exits are fast
             time.sleep(0.1)
