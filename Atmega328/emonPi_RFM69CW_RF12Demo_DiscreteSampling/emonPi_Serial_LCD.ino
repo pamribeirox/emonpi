@@ -106,7 +106,7 @@ void send_emonpi_serial()  //Send emonPi data to Pi serial /dev/ttyAMA0 using st
   delay(10);
 }
 
-static void showString (PGM_P s) {
+void showString (PGM_P s) { // PAMR: This function is called externally, can't be static
   for (;;) {
     char c = pgm_read_byte(s++);
     if (c == 0)
