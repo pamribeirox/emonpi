@@ -69,8 +69,10 @@ const int TIME_BETWEEN_READINGS=  5000;                             // Time betw
 
 const float Ical1=                90.9;                             // (2000 turns / 22 Ohm burden) = 90.9
 const float Ical2=                90.9;                                 
-float Vcal_EU=                    265.42;                             // (230V x 13) / (9V x 1.2) = 276.9 Calibration for UK AC-AC adapter 77DB-06-09 
+//float Vcal_EU=                    265.42;                             // (230V x 13) / (9V x 1.2) = 276.9 Calibration for UK AC-AC adapter 77DB-06-09 
+const float Vcal_EU=              248.55;                             // Calibration for EU AC-AC adapter 77DE-06-09 (PAMR: tuned with a Fluke True RMS multimeter)
 //const float Vcal=               260;                                // Calibration for EU AC-AC adapter 77DE-06-09 
+
 const float Vcal_USA=             130.0;                              // Calibration for US AC-AC adapter 77DA-10-09
 boolean USA=                      FALSE; 
 const byte min_pulsewidth= 110;                              // minimum width of interrupt pulse (default pulse output meters = 100ms)
@@ -108,7 +110,7 @@ byte numSensors;
 //-------------------------------------------------------------------------------------------------------------------------------------------
 
 //-----------------------RFM12B / RFM69CW SETTINGS----------------------------------------------------------------------------------------------------
-byte RF_freq=RF12_433MHZ;                                        // Frequency of RF69CW module can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. You should use the one matching the module you have.
+byte RF_freq=RF12_868MHZ;                                        // Frequency of RF69CW module can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. You should use the one matching the module you have. (PAMR: here I use 868MHz modules)
 byte nodeID = 5;                                                 // emonpi node ID
 int networkGroup = 210;  
 
@@ -269,7 +271,11 @@ void loop()
    }
 
 
-   emonPi.power1_plus_2=emonPi.power1 + emonPi.power2;                            //Create power 1 plus power 2 variable for US and solar PV installs
+   //emonPi.power1_plus_2=emonPi.power1 + emonPi.power2;                            //Create power 1 plus power 2 variable for US and solar PV installs
+   if (ACAC)                                                                       // PAMR: Replace composite power with power factor * 1000, more usefull here
+     emonPi.power1_plus_2=ct1.powerFactor * 1000;
+   else
+     emonPi.power1_plus_2=0;
 
   //Serial.print(emonPi.pulseCount); Serial.print(" ");delay(5);
    // if (debug==1) {Serial.print(emonPi.power2); Serial.print(" ");delay(5);}  
