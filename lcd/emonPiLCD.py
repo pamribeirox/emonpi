@@ -338,34 +338,34 @@ while 1:
             else:
                 lcd_string1 = 'Power 1: ...'
                 lcd_string2 = 'Power 2: ...'
-		elif page==4:
-			basedata = r.get("basedata")
-			if basedata is not None:
-				basedata = basedata.split(",")
-				lcd_string1 = 'PFactor: '+str(basedata[2])
-				lcd_string2 = 'Vrms: '+str(basedata[3])+"V"
-			else:
-				lcd_string1 = 'PFactor: ...'
-				lcd_string2 = 'Vrms: ...'
-		elif page==5:
-			basedata = r.get("basedata")
-			if basedata is not None:
-				basedata = basedata.split(",")
-				lcd_string1 = 'T12: '+str(basedata[4])+"/"+str(basedata[5])+" C"
-				lcd_string2 = 'T34: '+str(basedata[6])+"/"+str(basedata[7])+" C"
-			else:
-				lcd_string1 = 'T12: ...'
-				lcd_string2 = 'T34: ...'
-		elif page==6:
-			basedata = r.get("basedata")
-			if basedata is not None:
-				basedata = basedata.split(",")
-				lcd_string1 = 'T56: '+str(basedata[8])+"/"+str(basedata[9])+" C"
-				lcd_string2 = 'T78: ...'
-			else:
-				lcd_string1 = 'T56: ...'
-				lcd_string2 = 'T78: ...'
-				
+	elif page==4:
+		basedata = r.get("basedata")
+		if basedata is not None:
+			basedata = basedata.split(",")
+			lcd_string1 = 'PFactor: '+str(basedata[2])
+			lcd_string2 = 'Vrms: '+str(basedata[3])+"V"
+		else:
+			lcd_string1 = 'PFactor: ...'
+			lcd_string2 = 'Vrms: ...'
+	elif page==5:
+		basedata = r.get("basedata")
+		if basedata is not None:
+			basedata = basedata.split(",")
+			lcd_string1 = 'T12: '+str(basedata[4])+"/"+str(basedata[5])+" C"
+			lcd_string2 = 'T34: '+str(basedata[6])+"/"+str(basedata[7])+" C"
+		else:
+			lcd_string1 = 'T12: ...'
+			lcd_string2 = 'T34: ...'
+	elif page==6:
+		basedata = r.get("basedata")
+		if basedata is not None:
+			basedata = basedata.split(",")
+			lcd_string1 = 'T56: '+str(basedata[8])+"/"+str(basedata[9])+" C"
+			lcd_string2 = 'T78: ...'
+		else:
+			lcd_string1 = 'T56: ...'
+			lcd_string2 = 'T78: ...'
+			
         logger.info("main lcd_string1: "+lcd_string1)
         logger.info("main lcd_string2: "+lcd_string2)
         
