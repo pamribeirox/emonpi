@@ -44,8 +44,6 @@ https://github.com/openenergymonitor/emonpi/blob/master/Atmega328/emonPi_RFM69CW
 #include <util/parity.h>
 ISR(WDT_vect) { Sleepy::watchdogEvent(); }                            // Attached JeeLib sleep function to Atmega328 watchdog -enables MCU to be put into sleep mode inbetween readings to reduce power consumption 
 
-#include "emonPi_RF.h"                                                // PAMR: Avoid problems compiling in Arduino 1.6.6 due to extern vs static functions conflict
-
 #include "EmonLib.h"                                                  // Include EmonLib energy monitoring library https://github.com/openenergymonitor/EmonLib
 EnergyMonitor ct1, ct2;       
 
