@@ -1,5 +1,3 @@
-#include "emonPi_RF.h"
-
 void RF_Setup(){
 	//--------------------------------------------------Initalize RF and send out RF test packets--------------------------------------------------------------------------------------------  
   delay(10);
@@ -69,7 +67,7 @@ void send_RF(){
 }
 
 
-static void handleInput (char c) {
+void handleInput (char c) { // PAMR: This function are called externally can't be static
   if ('0' <= c && c <= '9') {
     value = 10 * value + c - '0';
     return;
@@ -152,7 +150,7 @@ static void handleInput (char c) {
 }
 
 
-static byte bandToFreq (byte band) {
+byte bandToFreq (byte band) { // PAMR: This function are called externally can't be static
   return band == 4 ? RF12_433MHZ : band == 8 ? RF12_868MHZ : band == 9 ? RF12_915MHZ : 0;
 }
  
