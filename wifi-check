@@ -34,7 +34,7 @@
 ##################################################################
 # Settings
 # Where and what you want to call the Lockfile
-lockfile='/var/run/wifi-check.pid'
+lockfile='/tmp/wifi-check.pid' # PAMR: The "pi" user can't create files in /var/run !
 # Which Interface do you want to check/fix
 wlan='wlan0'
 ##################################################################
@@ -64,17 +64,18 @@ echo $$ > $lockfile
 
 # We can perform check
 echo "Performing Network check for $wlan"
-if ifconfig $wlan | grep -q "inet addr:" ; then
+if ifconfig $wlan | grep -F -q "inet addr:" ; then # PAMR: Fixed string search
     echo "Network is Okay"
 else
     # Only allow re-connection if the eth0 is not physically connected
     # isWireConnected=`cat /sys/class/net/eth0/operstate`
     # if [ "$isWireConnected" == "down" ]; then
     #   echo "Network connection down! Attempting reconnection."
-        ifdown $wlan
+        sudo ifdown $wlan # PAMR: Run the command with privileges
+        sudo killall -TERM dhclient # PAMR: remove the old DHCP clients
         sleep 5
-        ifup --force $wlan
-        ifconfig $wlan | grep "inet addr"
+        sudo ifup --force $wlan # PAMR: Run the command with privileges
+        ifconfig $wlan | grep -F "inet addr"
     # else
     #   echo "Network connection down, but not reconnecting because eth0 is connected and configuring device."
     # fi
@@ -82,7 +83,7 @@ fi
 
 echo 
 echo "Current Setting:"
-ifconfig $wlan | grep "inet addr:"
+ifconfig $wlan | grep -F "inet addr:"
 echo
  
 # Check is complete, Remove Lock file and exit
