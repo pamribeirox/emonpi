@@ -27,7 +27,7 @@ emonPi_nodeID = 5
 
 # Default Startup Page
 page = 0
-max_number_pages = 3
+max_number_pages = 6 # PAMR: Extended information pages
 
 # ------------------------------------------------------------------------------------
 # Start Logging
@@ -140,7 +140,7 @@ class Background(threading.Thread):
                     # wlan link status
                     p = Popen("/sbin/iwconfig wlan0", shell=True, stdout=PIPE)
                     iwconfig = p.communicate()[0]
-                    tmp = re.findall('(?<=Signal level=)\w+',iwconfig)
+                    tmp = re.findall('(?<=Signal level=)-?\w+',iwconfig) # PAMR: dBm values are negative!
                     if len(tmp)>0: signallevel = tmp[0]
 
                 r.set("wlan:signallevel",signallevel)
@@ -316,7 +316,10 @@ while 1:
                 
         elif page==1:
             if int(r.get("wlan:active")):
-                lcd_string1 = "WIFI: YES  "+str(r.get("wlan:signallevel"))+"%"
+            	if int(r.get("wlan:signallevel")) > 0:
+                	lcd_string1 = "WIFI: YES  "+str(r.get("wlan:signallevel"))+"%"
+                else:
+                	lcd_string1 = "WIFI: YES "+str(r.get("wlan:signallevel"))+"dBm"	
                 lcd_string2 = r.get("wlan:ip")
             else:
                 lcd_string1 = "WIFI:"
@@ -335,7 +338,34 @@ while 1:
             else:
                 lcd_string1 = 'Power 1: ...'
                 lcd_string2 = 'Power 2: ...'
-        
+		elif page==4:
+			basedata = r.get("basedata")
+			if basedata is not None:
+				basedata = basedata.split(",")
+				lcd_string1 = 'PFactor: '+str(basedata[2])
+				lcd_string2 = 'Vrms: '+str(basedata[3])+"V"
+			else:
+				lcd_string1 = 'PFactor: ...'
+				lcd_string2 = 'Vrms: ...'
+		elif page==5:
+			basedata = r.get("basedata")
+			if basedata is not None:
+				basedata = basedata.split(",")
+				lcd_string1 = 'T12: '+str(basedata[4])+"/"+str(basedata[5])+" C"
+				lcd_string2 = 'T34: '+str(basedata[6])+"/"+str(basedata[7])+" C"
+			else:
+				lcd_string1 = 'T12: ...'
+				lcd_string2 = 'T34: ...'
+		elif page==6:
+			basedata = r.get("basedata")
+			if basedata is not None:
+				basedata = basedata.split(",")
+				lcd_string1 = 'T56: '+str(basedata[8])+"/"+str(basedata[9])+" C"
+				lcd_string2 = 'T78: ...'
+			else:
+				lcd_string1 = 'T56: ...'
+				lcd_string2 = 'T78: ...'
+				
         logger.info("main lcd_string1: "+lcd_string1)
         logger.info("main lcd_string2: "+lcd_string2)
         
