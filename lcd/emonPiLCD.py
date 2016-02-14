@@ -206,7 +206,7 @@ def shutdown():
         time.sleep(1)
         for x in range(4, 0, -1):
             lcd_string2 += "%d.." % (x)
-            lcd.lcd_display_string( string_lenth(lcd_string2, 16),2) 
+            lcd.lcd_display_string( string_lenth(lcd_string2, 16),2)
             time.sleep(1)
 
             if (GPIO.input(11) == 0):
