@@ -363,7 +363,7 @@ while 1:
                 lcd_string1 = "WIFI:"
                 lcd_string2 = "NOT CONNECTED"
 
-	elif page==2:
+        elif page==2:
             basedata = r.get("basedata")
             if (basedata is not None) & (mqttConnected ==True) :
                 basedata = basedata.split(",")
