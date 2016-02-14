@@ -402,40 +402,41 @@ while 1:
                 lcd_string1 = 'ERROR: MQTT'
                 lcd_string2 = 'Not connected'
 
-	elif page==5:
-		basedata = r.get("basedata")
-		if basedata is not None:
-			basedata = basedata.split(",")
-			lcd_string1 = 'PFactor: '+str(basedata[2])
-			lcd_string2 = 'Vrms: '+str(basedata[3])+"V"
-		else:
-			lcd_string1 = 'PFactor: ...'
-			lcd_string2 = 'Vrms: ...'
-	elif page==6:
-		basedata = r.get("basedata")
-		if basedata is not None:
-			basedata = basedata.split(",")
-			lcd_string1 = 'T12: '+str(basedata[4])+"/"+str(basedata[5])+" C"
-			lcd_string2 = 'T34: '+str(basedata[6])+"/"+str(basedata[7])+" C"
-		else:
-			lcd_string1 = 'T12: ...'
-			lcd_string2 = 'T34: ...'
-	elif page==7:
-		basedata = r.get("basedata")
-		if basedata is not None:
-			basedata = basedata.split(",")
-			lcd_string1 = 'T56: '+str(basedata[8])+"/"+str(basedata[9])+" C"
-			lcd_string2 = 'T78: ...'
-		else:
-			lcd_string1 = 'T56: ...'
-			lcd_string2 = 'T78: ...'
-        elif page==8:
+        elif page==5:
             lcd_string1 = datetime.now().strftime('%b %d %H:%M')
             lcd_string2 =  'Uptime %.2f days' % (float(r.get("uptime"))/86400)
         
-        elif page==9:
+        elif page==6:
             lcd_string1 = "emonPi Build:"
 	    lcd_string2 = sd_image_version[:-1]
+
+        elif page==7:
+                basedata = r.get("basedata")
+                if basedata is not None:
+                        basedata = basedata.split(",")
+                        lcd_string1 = 'PFactor: '+str(basedata[2])
+                        lcd_string2 = 'Vrms: '+str(basedata[3])+"V"
+                else:
+                        lcd_string1 = 'PFactor: ...'
+                        lcd_string2 = 'Vrms: ...'
+        elif page==8:
+                basedata = r.get("basedata")
+                if basedata is not None:
+                        basedata = basedata.split(",")
+                        lcd_string1 = 'T12: '+str(basedata[4])+"/"+str(basedata[5])+" C"
+                        lcd_string2 = 'T34: '+str(basedata[6])+"/"+str(basedata[7])+" C"
+                else:
+                        lcd_string1 = 'T12: ...'
+                        lcd_string2 = 'T34: ...'
+        elif page==9:
+                basedata = r.get("basedata")
+                if basedata is not None:
+                        basedata = basedata.split(",")
+                        lcd_string1 = 'T56: '+str(basedata[8])+"/"+str(basedata[9])+" C"
+                        lcd_string2 = 'T78: ...'
+                else:
+                        lcd_string1 = 'T56: ...'
+                        lcd_string2 = 'T78: ...'
 
         # If Shutdown button is not pressed update LCD
         if (GPIO.input(11) == 0):
