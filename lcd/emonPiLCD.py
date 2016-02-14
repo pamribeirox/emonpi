@@ -190,35 +190,27 @@ class Background(threading.Thread):
             time.sleep(0.1)
             
 def sigint_handler(signal, frame):
-    lcd_string1 = "LCD SCRIPT"
-    lcd_string2 =  "STOPPED"
-    lcd.lcd_display_string( string_lenth(lcd_string1, 16),1)
-    lcd.lcd_display_string( string_lenth(lcd_string2, 16),2) 
-    time.sleep(1)
     logger.info("ctrl+c exit received")
     background.stop = True;
     sys.exit(0)
-    
+
 def sigterm_handler(signal, frame):
-    time.sleep(1)
     logger.info("sigterm received")
     background.stop = True;
     sys.exit(0)
-    
+
 def shutdown():
     while (GPIO.input(11) == 1):
         lcd_string1 = "emonPi Shutdown"
         lcd_string2 = "5.."
         lcd.lcd_display_string( string_lenth(lcd_string1, 16),1)
         lcd.lcd_display_string( string_lenth(lcd_string2, 16),2)
-        logger.info("main lcd_string1: "+lcd_string1)
         time.sleep(1)
         for x in range(4, 0, -1):
             lcd_string2 += "%d.." % (x)
             lcd.lcd_display_string( string_lenth(lcd_string2, 16),2) 
-            logger.info("main lcd_string2: "+lcd_string2)
             time.sleep(1)
-            
+
             if (GPIO.input(11) == 0):
                 return
         lcd_string2="SHUTDOWN NOW!"
@@ -230,10 +222,10 @@ def shutdown():
         lcd.lcd_display_string( string_lenth("Wait 30s...", 16),1)
         lcd.lcd_display_string( string_lenth("Before Unplug!", 16),2)
         time.sleep(4)
-        lcd.backlight(0) 											# backlight zero must be the last call to the LCD to keep the backlight off 
+        lcd.backlight(0) 											# backlight zero must be the last call to the LCD to keep the backlight off
         call('halt', shell=False)
         sys.exit() #end script 
-                    
+
 def get_uptime():
 
     return string
@@ -244,62 +236,64 @@ def string_lenth(string, length):
 		string += ' ' * (16 - len(string))
 	return (string)
 
-# write to I2C LCD 
+# write to I2C LCD
 def updatelcd():
-    # line 1- make sure string is 16 characters long to fill LED 
+    # line 1- make sure string is 16 characters long to fill LED
     lcd.lcd_display_string( string_lenth(lcd_string1, 16),1)
     lcd.lcd_display_string( string_lenth(lcd_string2, 16),2) # line 2
-    
+
 def on_connect(client, userdata, flags, rc):
     global mqttConnected
     if rc:
         mqttConnected = False
+        logger.error("Unable to connect to MQTT server")
     else:
-        logger.info("MQTT Connection UP")
         mqttConnected = True
-        mqttc.subscribe("emonhub/rx/#")
-    
+        logger.info("Success! Connected to MQTT server")
+        mqttc.subscribe(mqtt_topic)
+        logger.info("Subscribing to topic: " + mqtt_topic)
+
 def on_disconnect(client, userdata, rc):
     global mqttConnected
-    logger.info("MQTT Connection DOWN")
     mqttConnected = False
+    logger.error("MQTT server disconnected")
 
 def on_message(client, userdata, msg):
     topic_parts = msg.topic.split("/")
-    logger.info("MQTT RX: "+msg.topic+" "+msg.payload)
     if int(topic_parts[2])==emonPi_nodeID:
         basedata = msg.payload.split(",")
         r.set("basedata",msg.payload)
 
 class ButtonInput():
     def __init__(self):
-        GPIO.add_event_detect(16, GPIO.RISING, callback=self.buttonPress, bouncetime=1000) 
+        GPIO.add_event_detect(16, GPIO.RISING, callback=self.buttonPress, bouncetime=1000)
         self.press_num = 0
         self.pressed = False
     def buttonPress(self,channel):
         self.pressed = True
         logger.info("lcd button press "+str(self.press_num))
-        
+
 signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGTERM,sigterm_handler)
 
-# Use Pi board pin numbers as these as always consistent between revisions 
-GPIO.setmode(GPIO.BOARD)                                 
+# Use Pi board pin numbers as these as always consistent between revisions
+GPIO.setmode(GPIO.BOARD)                                
 #emonPi LCD push button Pin 16 GPIO 23
-GPIO.setup(16, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)    
+GPIO.setup(16, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
 #emonPi Shutdown button, Pin 11 GPIO 17
 GPIO.setup(11, GPIO.IN)
 
 time.sleep(1.0)
-
-lcd_string1 = ""
-lcd_string2 = ""
 
 background = Background()
 background.start()
 buttoninput = ButtonInput()
 
 lcd = lcddriver.lcd()
+
+# Display SD card version info set at startup
+lcd.lcd_display_string( string_lenth(lcd_string1, 16),1)
+lcd.lcd_display_string( string_lenth(lcd_string2, 16),2)
 
 mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
@@ -309,18 +303,21 @@ mqttc.on_message = on_message
 last1s = time.time() - 1.0
 buttonPress_time = time.time()
 
+## time to show Build version
+time.sleep(5)
+
 while 1:
 
     now = time.time()
 
     if not mqttConnected:
-        logger.info("Connecting to MQTT Server")
+        logger.info("Connecting to MQTT Server: "+mqtt_host+" on port: "+str(mqtt_port)+" with user: "+mqtt_user)
         try:
-            mqttc.connect("127.0.0.1", "1883", 60)
-            lcd = lcddriver.lcd()
+            mqttc.username_pw_set(mqtt_user, mqtt_passwd)
+            mqttc.connect(mqtt_host, mqtt_port, 60)
         except:
-            logger.info("Could not connect...")
-            time.sleep(1.0)
+            logger.error("Could not connect to MQTT")
+            time.sleep(5.0)
     
     mqttc.loop(0)
 
