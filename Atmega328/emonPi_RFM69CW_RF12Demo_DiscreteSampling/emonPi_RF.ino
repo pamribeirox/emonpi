@@ -130,7 +130,7 @@ void handleInput (char c) { // PAMR: This function are called externally can't b
     //Print Current RF config  
 
     if (RF_STATUS==1) {
-      Serial.print(F(' '));
+      Serial.print(F(" "));
 -     Serial.print((char) ('@' + (nodeID & RF12_HDR_MASK)));
 -     Serial.print(F(" i"));
       Serial.print(nodeID & RF12_HDR_MASK);   
