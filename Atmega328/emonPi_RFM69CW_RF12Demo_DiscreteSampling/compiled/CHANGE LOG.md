@@ -1,4 +1,18 @@
-# Change Log
+# Change Log - emonPi Discrete Sampling Firmware
+
+# V2.2 (30/01/15)
+ * Reduction in SRAM memory usage thanks to F-macro serial string implementation
+ * Display "Raspberry Pi Booting" message on LCD at startup
+ * Only sample from CT channels when CT is connected to that channel (fix noise readings when no CT connected)
+
+# V2.1 (20/1/16)
+  * Allow use of group 0
+
+# V2.0 (17/11/15)
+  * Don't print ACK's to serial 
+
+# V1.9 (16/11/15)
+  * Fix counting pulses faster than 110ms, strobed meter LED http://openenergymonitor.org/emon/node/11490
 
 # V1.8 (30/10/15)
   * Enable pulse count INT1 internal pull-up to fix spurious pulse count readings

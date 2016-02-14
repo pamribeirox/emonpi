@@ -1,24 +1,71 @@
 #!/bin/bash
+# Run sudo su
+# ./factoryreset
 
-echo "Factory reset"
+echo "emonPi Factory reset script"
 
-sudo service emonhub stop
-sudo service emoncms-nodes-service stop
-sudo service feedwriter stop
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root: sudo su ./factoryreset"
+   exit 1
+fi
+
+rpi-rw
+
+image_version=$(ls /boot | grep emonSD)
+echo "$image_version"
+image_date=${image_version:0:16}
+# Check first 14 characters of filename
+if [[ "$image_date" == "emonSD-17Jun2015" ]]
+then
+  image="old"
+  echo "$image image"
+else
+  image="new"
+  echo "$image image"
+fi
+
+if [[ "${image_version:0:6}" == "emonSD" ]]
+then
+    echo "Image version: $image_version"
+else
+    echo "Non OpenEnergyMonitor offical emonSD image, no gurantees this script will work :-/"
+    read -p "Press any key to continue...or CTRL+C to exit " -n1 -s
+fi
+
+ans=n
+read -p "Shutdown when complete (y/n)? Else rebooting in 5s " -t 5 ans
+
+sudo /etc/init.d/emonhub stop
+sudo /etc/init.d/emoncms-nodes-service stop
+sudo /etc/init.d/feedwriter stop
+sudo /etc/init.d/mqtt_input stop
 
 sudo service redis-server restart
 
+echo "remove old conf & backup files"
+sudo rm /home/pi/data/*.conf
+sudo rm /home/pi/data/*.sql
+
 echo "emoncms.conf reset"
-cd /home/pi
-> emoncms.conf
-sudo mv /home/pi/emoncms.conf /home/pi/data/emoncms.conf
+touch /home/pi/data/emoncms.conf
 sudo chown pi:www-data /home/pi/data/emoncms.conf
 sudo chmod 664 /home/pi/data/emoncms.conf
 
-echo "emonhub.conf reset"
-sudo cp /home/pi/emonhub/conf/emonhub.conf /home/pi/data/emonhub.conf
+echo "emonpi default settings"
+cp /var/www/emoncms/default.emonpi.settings.php /var/www/emoncms/settings.php
+
+if [[ $image == "old" ]]
+then    # Legacy image use emonhub.conf without MQTT authenitication
+   echo "Start with fresh config: copy LEGACY default emonhub.conf"
+   echo "/home/pi/emonhub/conf/old.default.emonhub.conf /home/pi/data/emonhub.conf"
+   cp /home/pi/emonhub/conf/old.default.emonhub.conf /home/pi/data/emonhub.conf
+else    # Newer Feb15+ image use latest emonhub.conf with MQTT node variable topic structure and MQTT authentication enabled
+   echo "Start with fresh config: copy NEW default emonpi emonhub.conf"
+   echo "cp /home/pi/emonhub/conf/emonpi.default.emonhub.conf /home/pi/data/emonhub.conf"
+   cp /home/pi/emonhub/conf/emonpi.default.emonhub.conf /home/pi/data/emonhub.conf
+fi
 sudo chown pi:www-data /home/pi/data/emonhub.conf
-sudo chmod 664 /home/pi/data/emonhub.conf
+sudo chmod 666 /home/pi/data/emonhub.conf
 
 echo "deleting phpfina and phptimeseries data"
 sudo rm -rf /home/pi/data/phpfina
@@ -31,11 +78,40 @@ sudo chown www-data:root /home/pi/data/phpfina
 sudo chown www-data:root /home/pi/data/phptimeseries
 
 echo "deleting mysql emoncms database"
-mysql -u root -e "drop database emoncms" -praspberry
+if [[ $image == "old" ]]
+then
+  mysql -u root -e "drop database emoncms" -praspberry
+  echo "creating new mysql emoncms database"
+  mysql -u root -e "create database emoncms" -praspberry
+else
+  mysql -u root -e "drop database emoncms" -pemonpimysql2016
+  echo "creating new mysql emoncms database"
+  mysql -u root -e "create database emoncms" -pemonpimysql2016
+fi
 
-echo "creating new mysql emoncms database"
-mysql -u root -e "create database emoncms" -praspberry
 
-sudo service emonhub start
-sudo service emoncms-nodes-service start
-sudo service feedwriter start
+
+echo "Delete logs & backup data"
+rm /home/pi/data/*.log
+rm /home/pi/data/*.gz
+rm /home/pi/data/uploads/*.gz
+rm /home/pi/data/import -rf
+
+echo "clear WiFi config /etc/wpa_supplicant/wpa_supplicant.conf"
+echo "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev" > /etc/wpa_supplicant/wpa_supplicant.conf
+echo "update_config=1" >> /etc/wpa_supplicant/wpa_supplicant.conf
+
+echo "Clear bash history"
+history -c
+
+echo
+if [[ "$ans" == "" ]] ; then ans=n;fi
+if [[ "$ans" == "y" ]] ;then
+echo "Shutting down Raspberry Pi";
+sudo halt;
+else
+echo "REBOOTING Raspberry Pi";
+sudo init 6
+fi
+
+exit 0
