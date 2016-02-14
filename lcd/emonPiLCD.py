@@ -44,7 +44,7 @@ backlight_timeout = 300
 
 # Default Startup Page
 page = 0
-max_number_pages = 6 # PAMR: Extended information pages
+max_number_pages = 5 # PAMR: Extended information pages
 
 # ------------------------------------------------------------------------------------
 # Start Logging
@@ -325,32 +325,35 @@ while 1:
         if backlight == True: page = page + 1
         if page>max_number_pages: page = 0
         buttonPress_time = time.time()
-
-        #turn backight off afer x seconds 
-    if (now - buttonPress_time) > backlight_timeout: 
+        logger.info("Mode button pressed")
+        logger.info("Page: "+str(page))
+        logger.info("Data: "+str(basedata))
+ 
+        #turn backight off afer x seconds
+    if (now - buttonPress_time) > backlight_timeout:
         backlight = False
-        lcd.backlight(0) 
+        lcd.backlight(0)
         if GPIO.input(11) == 1: shutdown() #ensure shutdown button works when backlight is off
     else: backlight = True
-    
-    
+
+
     # ----------------------------------------------------------
     # UPDATE EVERY 1's
     # ----------------------------------------------------------
     if ((now-last1s)>=1.0 and backlight) or buttoninput.pressed:
         last1s = now
 
-        if page==0:  
+        if page==0:
             if int(r.get("eth:active")):
                 lcd_string1 = "Ethernet: YES"
                 lcd_string2 = r.get("eth:ip")
             else:
-            	if int(r.get("wlan:active")): 
+            	if int(r.get("wlan:active")):
             		page=page+1
             	else:
             		lcd_string1 = "Ethernet:"
             		lcd_string2 = "NOT CONNECTED"
-                
+
         elif page==1:
             if int(r.get("wlan:active")):
             	if int(r.get("wlan:signallevel")) > 0:
@@ -361,21 +364,47 @@ while 1:
             else:
                 lcd_string1 = "WIFI:"
                 lcd_string2 = "NOT CONNECTED"
-                
-        elif page==2:
-		    lcd_string1 = datetime.now().strftime('%b %d %H:%M')
-		    lcd_string2 =  'Uptime %.2f days' % (float(r.get("uptime"))/86400)
-		    
-        elif page==3: 
+
+	elif page==2:
             basedata = r.get("basedata")
-            if basedata is not None:
+            if (basedata is not None) & (mqttConnected ==True) :
                 basedata = basedata.split(",")
                 lcd_string1 = 'Power 1: '+str(basedata[0])+"W"
                 lcd_string2 = 'Power 2: '+str(basedata[1])+"W"
-            else:
-                lcd_string1 = 'Power 1: ...'
-                lcd_string2 = 'Power 2: ...'
-	elif page==4:
+            if mqttConnected == False:
+                lcd_string1 = 'ERROR: MQTT'
+                lcd_string2 = 'Not connected'
+
+        elif page==3:
+            basedata = r.get("basedata")
+            if (basedata is not None) & (mqttConnected ==True) :
+                basedata = basedata.split(",")
+                lcd_string1 = 'VRMS: '+str(basedata[3])+"V"
+                if (basedata[4] != 0):
+                    lcd_string2 = 'Temp 1: '+str(basedata[4])+" C"
+                else:
+                   lcd_string2 = 'Temp1: ...'
+            if mqttConnected == False:
+                lcd_string1 = 'ERROR: MQTT'
+                lcd_string2 = 'Not connected'
+
+        elif page==4:
+            basedata = r.get("basedata")
+            if (basedata is not None) & (mqttConnected ==True) :
+                basedata = basedata.split(",")
+                if (basedata[5] != 0):
+                    lcd_string1 = 'Temp 2: '+str(basedata[5])+"C"
+                else:
+                    lcd_string1 = 'Temp2: ...'
+                if (basedata[10] != 0):
+                    lcd_string2 = 'Pulse '+str(basedata[10])+"p"
+                else:
+                    lcd_string2 = 'Pulse: ...'
+            if mqttConnected == False:
+                lcd_string1 = 'ERROR: MQTT'
+                lcd_string2 = 'Not connected'
+
+	elif page==5:
 		basedata = r.get("basedata")
 		if basedata is not None:
 			basedata = basedata.split(",")
@@ -384,7 +413,7 @@ while 1:
 		else:
 			lcd_string1 = 'PFactor: ...'
 			lcd_string2 = 'Vrms: ...'
-	elif page==5:
+	elif page==6:
 		basedata = r.get("basedata")
 		if basedata is not None:
 			basedata = basedata.split(",")
@@ -393,7 +422,7 @@ while 1:
 		else:
 			lcd_string1 = 'T12: ...'
 			lcd_string2 = 'T34: ...'
-	elif page==6:
+	elif page==7:
 		basedata = r.get("basedata")
 		if basedata is not None:
 			basedata = basedata.split(",")
@@ -402,20 +431,24 @@ while 1:
 		else:
 			lcd_string1 = 'T56: ...'
 			lcd_string2 = 'T78: ...'
-			
-        logger.info("main lcd_string1: "+lcd_string1)
-        logger.info("main lcd_string2: "+lcd_string2)
+        elif page==8:
+            lcd_string1 = datetime.now().strftime('%b %d %H:%M')
+            lcd_string2 =  'Uptime %.2f days' % (float(r.get("uptime"))/86400)
         
+        elif page==9:
+            lcd_string1 = "emonPi Build:"
+	    lcd_string2 = sd_image_version[:-1]
+
         # If Shutdown button is not pressed update LCD
         if (GPIO.input(11) == 0):
             updatelcd()
-        # If Shutdown button is pressed initiate shutdown sequence 
+        # If Shutdown button is pressed initiate shutdown sequence
         else:
             logger.info("shutdown button pressed")
             shutdown()
 
     buttoninput.pressed = False
     time.sleep(0.1)
-    
+
 GPIO.cleanup()
 logging.shutdown()
