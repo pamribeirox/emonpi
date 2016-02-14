@@ -134,8 +134,6 @@ int temp[MaxOnewire];
 unsigned long pulseCount;  
 } PayloadTX;                                                    // create JeeLabs RF packet structure - a neat way of packaging data for RF comms
 PayloadTX emonPi; 
-
-const unsigned long intRFtime = 600000L;                                  // Call rf12_initialize every 10min to restore RF http://openenergymonitor.org/emon/node/5549 (PAMR: changed to ulong to avoid truncating)
 //-------------------------------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------------------------------
 
