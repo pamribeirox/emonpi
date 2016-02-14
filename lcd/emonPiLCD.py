@@ -44,7 +44,7 @@ backlight_timeout = 300
 
 # Default Startup Page
 page = 0
-max_number_pages = 5 # PAMR: Extended information pages
+max_number_pages = 9 # PAMR: Extended information pages
 
 # ------------------------------------------------------------------------------------
 # Start Logging
