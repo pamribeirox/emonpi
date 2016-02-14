@@ -60,7 +60,7 @@ basedata = []
 if not uselogfile:
     loghandler = logging.StreamHandler()
 else:
-    loghandler = logging.handlers.RotatingFileHandler("/var/log/emonpilcd.log",'a', 5000 * 1024, 1)
+    loghandler = logging.handlers.RotatingFileHandler("/var/log/emonpilcd.log",'a', 1000*1024, 1)
     # 1Mb Max log size
 
 loghandler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
@@ -120,7 +120,6 @@ class Background(threading.Thread):
     def run(self):
         last1s = time.time() - 2.0
         last5s = time.time() - 6.0
-        logger.info("Starting background thread")
         # Loop until we stop is false (our exit signal)
         while not self.stop:
             now = time.time()
@@ -162,7 +161,7 @@ class Background(threading.Thread):
                 wlan0 = "ip addr show wlan0 | grep inet | awk '{print $2}' | cut -d/ -f1 | head -n1"
                 p = Popen(wlan0, shell=True, stdout=PIPE)
                 wlan0ip = p.communicate()[0][:-1]
-                
+
                 wlanactive = 1
                 if wlan0ip=="" or wlan0ip==False or (wlan0ip[:1].isdigit()!=1):
                     wlanactive = 0
@@ -171,7 +170,7 @@ class Background(threading.Thread):
                 r.set("wlan:ip",wlan0ip)
 
                 # ----------------------------------------------------------------------------------
-        
+
                 signallevel = 0
                 linklevel = 0
                 noiselevel = 0
@@ -188,7 +187,7 @@ class Background(threading.Thread):
                 
             # this loop runs a bit faster so that ctrl-c exits are fast
             time.sleep(0.1)
-            
+
 def sigint_handler(signal, frame):
     logger.info("ctrl+c exit received")
     background.stop = True;
@@ -216,7 +215,7 @@ def shutdown():
         lcd_string2="SHUTDOWN NOW!"
         background.stop = True
         lcd.lcd_display_string( string_lenth(lcd_string1, 16),1)
-        lcd.lcd_display_string( string_lenth(lcd_string2, 16),2) 
+        lcd.lcd_display_string( string_lenth(lcd_string2, 16),2)
         time.sleep(2)
         lcd.lcd_clear()
         lcd.lcd_display_string( string_lenth("Wait 30s...", 16),1)
