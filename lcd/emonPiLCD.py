@@ -69,6 +69,8 @@ logger.addHandler(loghandler)
 logger.setLevel(logging.INFO)
 
 logger.info("emonPiLCD Start")
+
+
 # ------------------------------------------------------------------------------------
 # Check to see if LCD is connected if not then stop here
 # ------------------------------------------------------------------------------------
@@ -135,7 +137,7 @@ class Background(threading.Thread):
                     array = str(timedelta(seconds = seconds)).split('.')
                     string = array[0]
                     r.set("uptime",seconds)
- 
+
             # ----------------------------------------------------------
             # UPDATE EVERY 5's
             # ----------------------------------------------------------
@@ -154,7 +156,6 @@ class Background(threading.Thread):
 
                 r.set("eth:active",ethactive)
                 r.set("eth:ip",eth0ip)
-                logger.info("background: eth:"+str(int(ethactive))+" "+eth0ip)
 
                 # Wireless LAN
                 # ----------------------------------------------------------------------------------
@@ -183,8 +184,6 @@ class Background(threading.Thread):
                     if len(tmp)>0: signallevel = tmp[0]
 
                 r.set("wlan:signallevel",signallevel)
-                logger.info("background: wlan signal "+str(signallevel))
-                
             # this loop runs a bit faster so that ctrl-c exits are fast
             time.sleep(0.1)
 
@@ -223,7 +222,7 @@ def shutdown():
         time.sleep(4)
         lcd.backlight(0) 											# backlight zero must be the last call to the LCD to keep the backlight off
         call('halt', shell=False)
-        sys.exit() #end script 
+        sys.exit() #end script
 
 def get_uptime():
 
@@ -317,7 +316,7 @@ while 1:
         except:
             logger.error("Could not connect to MQTT")
             time.sleep(5.0)
-    
+
     mqttc.loop(0)
 
     if buttoninput.pressed:
@@ -327,7 +326,7 @@ while 1:
         logger.info("Mode button pressed")
         logger.info("Page: "+str(page))
         logger.info("Data: "+str(basedata))
- 
+
         #turn backight off afer x seconds
     if (now - buttonPress_time) > backlight_timeout:
         backlight = False
