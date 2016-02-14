@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import lcddriver
 from subprocess import *
+import lcddriver
 import time
 from datetime import datetime
 from datetime import timedelta
 from uptime import uptime
+import subprocess
 import threading
 import sys
 import RPi.GPIO as GPIO
@@ -14,16 +15,32 @@ import re
 import paho.mqtt.client as mqtt
 
 # ------------------------------------------------------------------------------------
+# emonPi Node ID (default 5)
+# ------------------------------------------------------------------------------------
+emonPi_nodeID = 5
+
+# ------------------------------------------------------------------------------------
+# MQTT Settings
+# ------------------------------------------------------------------------------------
+mqtt_user = "emonpi"
+mqtt_passwd = "emonpimqtt2016"
+mqtt_host = "127.0.0.1"
+mqtt_port = 1883
+mqtt_topic = "emonhub/rx/"+str(emonPi_nodeID)+"/values"
+
+# ------------------------------------------------------------------------------------
+# Redis Settings
+# ------------------------------------------------------------------------------------
+redis_host = 'localhost'
+redis_port = 6379
+
+
+# ------------------------------------------------------------------------------------
 # LCD backlight timeout in seconds
 # 0: always on
 # 300: off after 5 min
 # ------------------------------------------------------------------------------------
 backlight_timeout = 300
-
-# ------------------------------------------------------------------------------------
-# emonPi Node ID (default 5)
-# ------------------------------------------------------------------------------------
-emonPi_nodeID = 5
 
 # Default Startup Page
 page = 0
@@ -34,7 +51,7 @@ max_number_pages = 6 # PAMR: Extended information pages
 # ------------------------------------------------------------------------------------
 import logging
 import logging.handlers
-uselogfile = False
+uselogfile = True
 
 mqttc = False
 mqttConnected = False
@@ -43,17 +60,44 @@ basedata = []
 if not uselogfile:
     loghandler = logging.StreamHandler()
 else:
-    loghandler = logging.handlers.RotatingFileHandler("/var/log/emonPiLCD",'a', 5000 * 1024, 1)
+    loghandler = logging.handlers.RotatingFileHandler("/var/log/emonpilcd.log",'a', 5000 * 1024, 1)
+    # 1Mb Max log size
 
 loghandler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
 logger = logging.getLogger("emonPiLCD")
-logger.addHandler(loghandler)    
+logger.addHandler(loghandler)
 logger.setLevel(logging.INFO)
 
 logger.info("emonPiLCD Start")
 # ------------------------------------------------------------------------------------
+# Check to see if LCD is connected if not then stop here
+# ------------------------------------------------------------------------------------
 
-r = redis.Redis(host='localhost', port=6379, db=0)
+lcd_status = subprocess.check_output(["/home/pi/emonpi/lcd/./emonPiLCD_detect.sh", "27"])
+
+if lcd_status.rstrip() == 'False':
+    print "I2C LCD NOT DETECTED...exiting LCD script"
+    logger.error("I2C LCD NOT DETECTED...exiting LCD script")
+    sys.exit(1)
+else:
+    logger.info("I2C LCD Detected on 0x27")
+
+# ------------------------------------------------------------------------------------
+# Discover & display emonPi SD card image version
+# ------------------------------------------------------------------------------------
+
+sd_image_version = subprocess.check_output("ls /boot | grep emonSD", shell=True)
+if not sd_image_version:
+    sd_image_version = "N/A"
+
+lcd_string1 = "emonPi Build:"
+lcd_string2 = sd_image_version[:-1]
+logger.info("SD card image build version: " + sd_image_version)
+
+
+# ------------------------------------------------------------------------------------
+
+r = redis.Redis(host=redis_host, port=redis_port, db=0)
 
 # We wait here until redis has successfully started up
 redisready = False
@@ -61,11 +105,8 @@ while not redisready:
     try:
         r.client_list()
         redisready = True
-        
-        
-        
     except redis.ConnectionError:
-        logger.info("waiting for redis-server to start...")
+        logger.error("waiting for redis-server to start...")
         time.sleep(1.0)
 
 background = False
@@ -75,7 +116,7 @@ class Background(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.stop = False
-        
+
     def run(self):
         last1s = time.time() - 2.0
         last5s = time.time() - 6.0
@@ -83,7 +124,7 @@ class Background(threading.Thread):
         # Loop until we stop is false (our exit signal)
         while not self.stop:
             now = time.time()
-            
+
             # ----------------------------------------------------------
             # UPDATE EVERY 1's
             # ----------------------------------------------------------
@@ -95,7 +136,7 @@ class Background(threading.Thread):
                     array = str(timedelta(seconds = seconds)).split('.')
                     string = array[0]
                     r.set("uptime",seconds)
-                    
+ 
             # ----------------------------------------------------------
             # UPDATE EVERY 5's
             # ----------------------------------------------------------
@@ -107,15 +148,15 @@ class Background(threading.Thread):
                 eth0 = "ip addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1 | head -n1"
                 p = Popen(eth0, shell=True, stdout=PIPE)
                 eth0ip = p.communicate()[0][:-1]
-                
+
                 ethactive = 1
                 if eth0ip=="" or eth0ip==False or (eth0ip[:1].isdigit()!=1):
                     ethactive = 0
-                    
+
                 r.set("eth:active",ethactive)
                 r.set("eth:ip",eth0ip)
                 logger.info("background: eth:"+str(int(ethactive))+" "+eth0ip)
-                
+
                 # Wireless LAN
                 # ----------------------------------------------------------------------------------
                 wlan0 = "ip addr show wlan0 | grep inet | awk '{print $2}' | cut -d/ -f1 | head -n1"
@@ -125,16 +166,15 @@ class Background(threading.Thread):
                 wlanactive = 1
                 if wlan0ip=="" or wlan0ip==False or (wlan0ip[:1].isdigit()!=1):
                     wlanactive = 0
-                    
+
                 r.set("wlan:active",wlanactive)
                 r.set("wlan:ip",wlan0ip)
-                logger.info("background: wlan:"+str(int(wlanactive))+" "+wlan0ip)
-                
+
                 # ----------------------------------------------------------------------------------
         
                 signallevel = 0
                 linklevel = 0
-                noiselevel = 0        
+                noiselevel = 0
 
                 if wlanactive:
                     # wlan link status
